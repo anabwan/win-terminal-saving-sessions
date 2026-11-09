@@ -12,6 +12,8 @@ to run it from. Both touch the same two files in the same way.
 setup.ps1                                     # PowerShell entry point: install or uninstall
 setup.sh                                      # Bash entry point: install or uninstall
 VERSION                                       # single source of truth for the tool version
+bucket/
+  win-terminal-saving-sessions.json           # Scoop bucket manifest (this repo is its own bucket)
 scripts/
   Install-WinTerminalSessionRestore.ps1       # PowerShell installer (-DryRun / -Revert / -Status / -Version / -Help)
   Rollback-WinTerminalSessionRestore.ps1      # PowerShell: thin wrapper for Install...ps1 -Revert
@@ -36,6 +38,45 @@ This repo fixes the first three. The fourth (scrollback) is intentionally out
 of scope — recovering real pane output requires something like `tmux` (which
 needs WSL to work reliably; MSYS/Git Bash support is poor) and was explicitly
 descoped per discussion.
+
+## Installing
+
+### Via Scoop (recommended for PowerShell users)
+
+This repo doubles as its own [Scoop](https://scoop.sh) bucket:
+
+```powershell
+scoop bucket add win-terminal-saving-sessions https://github.com/anabwan/win-terminal-saving-sessions
+scoop install win-terminal-saving-sessions
+```
+
+This puts `win-terminal-saving-sessions` on your `PATH` (it's `setup.ps1`, so
+all the flags below work the same way). Nothing is applied automatically at
+install time — run it yourself:
+
+```powershell
+win-terminal-saving-sessions                # install
+win-terminal-saving-sessions -Action Status # check install state/version
+```
+
+`scoop update win-terminal-saving-sessions` picks up new tagged releases.
+
+### Manual (PowerShell or Git Bash)
+
+Clone or download the repo (a [Release](https://github.com/anabwan/win-terminal-saving-sessions/releases)
+zip works too), then from the repo root:
+
+```powershell
+.\setup.ps1
+```
+
+```bash
+./setup.sh
+```
+
+If PowerShell refuses to run `setup.ps1` because it was downloaded as a zip
+(Windows marks it "blocked"), run `Unblock-File .\setup.ps1` first, or launch
+it with `powershell -ExecutionPolicy Bypass -File .\setup.ps1`.
 
 ## What the script changes
 
