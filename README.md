@@ -3,6 +3,15 @@
 Fixes the "I have to rebuild my whole terminal setup after every reboot" problem
 for **Windows Terminal 1.24+** with **Git Bash** tabs.
 
+## Repo layout
+
+```
+scripts/
+  Install-WinTerminalSessionRestore.ps1    # main installer (-DryRun / -Revert)
+  Rollback-WinTerminalSessionRestore.ps1   # thin wrapper for Install...ps1 -Revert
+README.md
+```
+
 ## What this actually solves
 
 Windows Terminal has no single "save my session" button. The reality, straight
@@ -25,7 +34,7 @@ descoped per discussion.
 Run:
 
 ```powershell
-.\Install-WinTerminalSessionRestore.ps1
+.\scripts\Install-WinTerminalSessionRestore.ps1
 ```
 
 It touches two files, backing each up first (`<file>.bak-<timestamp>`):
@@ -49,9 +58,9 @@ re-apply an already-correct setting.
 ## Options
 
 ```powershell
-.\Install-WinTerminalSessionRestore.ps1 -DryRun   # show what would change, write nothing
-.\Install-WinTerminalSessionRestore.ps1 -Revert   # restore the most recent backups it made
-.\Rollback-WinTerminalSessionRestore.ps1          # same as -Revert, as its own script
+.\scripts\Install-WinTerminalSessionRestore.ps1 -DryRun   # show what would change, write nothing
+.\scripts\Install-WinTerminalSessionRestore.ps1 -Revert   # restore the most recent backups it made
+.\scripts\Rollback-WinTerminalSessionRestore.ps1          # same as -Revert, as its own script
 ```
 
 Use the rollback script (or `-Revert`) to undo the current install before
