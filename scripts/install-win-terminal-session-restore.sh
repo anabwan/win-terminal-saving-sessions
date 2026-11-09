@@ -209,14 +209,15 @@ ${BASHRC_BLOCK_END}"
     ok "  Updated: $path"
 }
 
-# Prints "found|version|uptodate" (pipe-separated) without writing anything.
+# Prints "found|version|uptodate|blockcount" (pipe-separated) without writing anything.
 get_bashrc_status() {
     local path="$1"
     if [[ ! -f "$path" ]] || ! grep -Eq "$BASHRC_BEGIN_PATTERN" "$path"; then
-        printf 'false||false\n'
+        printf 'false|||0\n'
         return
     fi
-    local begin_line version
+    local block_count begin_line version
+    block_count=$(grep -Ec "$BASHRC_BEGIN_PATTERN" "$path")
     begin_line=$(grep -E "$BASHRC_BEGIN_PATTERN" "$path" | head -n1)
     version=$(grep -oE 'v[0-9][0-9.]*' <<< "$begin_line" | sed 's/^v//')
     [[ -z "$version" ]] && version='pre-1.0.0 (unversioned)'
@@ -230,7 +231,7 @@ ${BASHRC_BLOCK_BODY}
 ${BASHRC_BLOCK_END}"
     local uptodate='false'
     [[ "$current_block" == "$new_block" ]] && uptodate='true'
-    printf 'true|%s|%s\n' "$version" "$uptodate"
+    printf 'true|%s|%s|%s\n' "$version" "$uptodate" "$block_count"
 }
 
 get_settings_status() {
@@ -257,9 +258,11 @@ if [[ "$STATUS" -eq 1 ]]; then
         fi
     done
 
-    IFS='|' read -r found version uptodate <<< "$(get_bashrc_status "$bashrc_path")"
+    IFS='|' read -r found version uptodate blockcount <<< "$(get_bashrc_status "$bashrc_path")"
     if [[ "$found" != "true" ]]; then
         warn "  .bashrc: not installed ($bashrc_path)"
+    elif [[ "$blockcount" -gt 1 ]]; then
+        printf '\033[31m  .bashrc: CORRUPTED - %s managed blocks found (expected 1). Manual cleanup required - see %s.\033[0m\n' "$blockcount" "$bashrc_path"
     elif [[ "$version" == "$TOOL_VERSION" && "$uptodate" == "true" ]]; then
         ok "  .bashrc: installed, v${version} (up to date)"
     else

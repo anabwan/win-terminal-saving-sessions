@@ -225,12 +225,13 @@ function Set-BashrcBlock($path) {
 
 function Get-BashrcStatus($path) {
     if (-not (Test-Path -LiteralPath $path)) {
-        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false }
+        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false; BlockCount = 0 }
     }
     $raw = [System.IO.File]::ReadAllText($path)
+    $blockCount = [regex]::Matches($raw, $BashrcBeginPattern).Count
     $beginMatch = [regex]::Match($raw, $BashrcBeginPattern)
     if (-not $beginMatch.Success) {
-        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false }
+        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false; BlockCount = 0 }
     }
     $verMatch = [regex]::Match($beginMatch.Value, 'v([0-9][0-9.]*)')
     $installedVersion = if ($verMatch.Success) { $verMatch.Groups[1].Value } else { 'pre-1.0.0 (unversioned)' }
@@ -240,7 +241,7 @@ function Get-BashrcStatus($path) {
     $newBlock = "$BashrcBlockBegin`n$BashrcBlockBody`n$BashrcBlockEnd"
     $upToDate = $blockMatch.Success -and (($blockMatch.Value -replace "`r`n", "`n") -eq $newBlock)
 
-    return [pscustomobject]@{ Found = $true; InstalledVersion = $installedVersion; UpToDate = $upToDate }
+    return [pscustomobject]@{ Found = $true; InstalledVersion = $installedVersion; UpToDate = $upToDate; BlockCount = $blockCount }
 }
 
 function Get-SettingsStatus($path) {
@@ -273,6 +274,9 @@ if ($Status) {
     $bashrcStatus = Get-BashrcStatus $bashrcPath
     if (-not $bashrcStatus.Found) {
         Write-Host "  .bashrc: not installed ($bashrcPath)" -ForegroundColor Yellow
+    }
+    elseif ($bashrcStatus.BlockCount -gt 1) {
+        Write-Host "  .bashrc: CORRUPTED - $($bashrcStatus.BlockCount) managed blocks found (expected 1). Manual cleanup required - see $bashrcPath." -ForegroundColor Red
     }
     elseif ($bashrcStatus.InstalledVersion -eq $ToolVersion -and $bashrcStatus.UpToDate) {
         Write-Host "  .bashrc: installed, v$($bashrcStatus.InstalledVersion) (up to date)" -ForegroundColor Green
