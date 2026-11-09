@@ -5,11 +5,17 @@ for **Windows Terminal 1.24+** with **Git Bash** tabs.
 
 ## Repo layout
 
+Two equivalent implementations are provided - use whichever shell you prefer
+to run it from. Both touch the same two files in the same way.
+
 ```
-setup.ps1                                  # entry point: install or uninstall
+setup.ps1                                     # PowerShell entry point: install or uninstall
+setup.sh                                      # Bash entry point: install or uninstall
 scripts/
-  Install-WinTerminalSessionRestore.ps1    # main installer (-DryRun / -Revert)
-  Rollback-WinTerminalSessionRestore.ps1   # thin wrapper for Install...ps1 -Revert
+  Install-WinTerminalSessionRestore.ps1       # PowerShell installer (-DryRun / -Revert)
+  Rollback-WinTerminalSessionRestore.ps1      # PowerShell: thin wrapper for Install...ps1 -Revert
+  install-win-terminal-session-restore.sh     # Bash installer (--dry-run / --revert)
+  rollback-win-terminal-session-restore.sh    # Bash: thin wrapper for install...sh --revert
 README.md
 ```
 
@@ -32,10 +38,16 @@ descoped per discussion.
 
 ## What the script changes
 
-Run:
+Run, from PowerShell:
 
 ```powershell
 .\setup.ps1
+```
+
+or, from Git Bash:
+
+```bash
+./setup.sh
 ```
 
 It touches two files, backing each up first (`<file>.bak-<timestamp>`):
@@ -58,10 +70,20 @@ re-apply an already-correct setting.
 
 ## Options
 
+PowerShell:
+
 ```powershell
-.\setup.ps1                 # install (equivalent to -Action Install)
-.\setup.ps1 -DryRun         # show what would change, write nothing
+.\setup.ps1                     # install (equivalent to -Action Install)
+.\setup.ps1 -DryRun             # show what would change, write nothing
 .\setup.ps1 -Action Uninstall   # restore the most recent backups it made
+```
+
+Bash:
+
+```bash
+./setup.sh                      # install (equivalent to --action install)
+./setup.sh --dry-run            # show what would change, write nothing
+./setup.sh --action uninstall   # restore the most recent backups it made
 ```
 
 The underlying scripts in `scripts/` can still be run directly if you prefer:
@@ -72,9 +94,16 @@ The underlying scripts in `scripts/` can still be run directly if you prefer:
 .\scripts\Rollback-WinTerminalSessionRestore.ps1          # same as -Revert, as its own script
 ```
 
-Use the rollback script (or `-Revert`) to undo the current install before
-applying a newer version of this setup — each install run backs up whatever
-was there beforehand, so rollback always steps back to the pre-install state.
+```bash
+./scripts/install-win-terminal-session-restore.sh --dry-run
+./scripts/install-win-terminal-session-restore.sh --revert
+./scripts/rollback-win-terminal-session-restore.sh          # same as --revert, as its own script
+```
+
+Use the rollback script (or `-Revert`/`--revert`) to undo the current install
+before applying a newer version of this setup — each install run backs up
+whatever was there beforehand, so rollback always steps back to the
+pre-install state.
 
 ## After running
 
