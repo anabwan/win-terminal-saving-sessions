@@ -11,10 +11,11 @@ to run it from. Both touch the same two files in the same way.
 ```
 setup.ps1                                     # PowerShell entry point: install or uninstall
 setup.sh                                      # Bash entry point: install or uninstall
+VERSION                                       # single source of truth for the tool version
 scripts/
-  Install-WinTerminalSessionRestore.ps1       # PowerShell installer (-DryRun / -Revert)
+  Install-WinTerminalSessionRestore.ps1       # PowerShell installer (-DryRun / -Revert / -Status / -Version / -Help)
   Rollback-WinTerminalSessionRestore.ps1      # PowerShell: thin wrapper for Install...ps1 -Revert
-  install-win-terminal-session-restore.sh     # Bash installer (--dry-run / --revert)
+  install-win-terminal-session-restore.sh     # Bash installer (--dry-run / --revert / --status / --version / --help)
   rollback-win-terminal-session-restore.sh    # Bash: thin wrapper for install...sh --revert
 README.md
 ```
@@ -76,6 +77,9 @@ PowerShell:
 .\setup.ps1                     # install (equivalent to -Action Install)
 .\setup.ps1 -DryRun             # show what would change, write nothing
 .\setup.ps1 -Action Uninstall   # restore the most recent backups it made
+.\setup.ps1 -Action Status      # check whether it's installed, and which version
+.\setup.ps1 -Version            # print the installed tool's version
+.\setup.ps1 -Help               # print usage
 ```
 
 Bash:
@@ -84,7 +88,23 @@ Bash:
 ./setup.sh                      # install (equivalent to --action install)
 ./setup.sh --dry-run            # show what would change, write nothing
 ./setup.sh --action uninstall   # restore the most recent backups it made
+./setup.sh --action status      # check whether it's installed, and which version
+./setup.sh --version            # print the installed tool's version
+./setup.sh --help               # print usage
 ```
+
+Sample `-Action Status` / `--action status` output:
+
+```
+== win-terminal-saving-sessions status (tool v1.0.0) ==
+  settings.json: applied (C:\Users\you\...\settings.json)
+  .bashrc: installed, v1.0.0 (up to date)
+```
+
+If a newer version of this repo is pulled (`VERSION` bumped) and `.bashrc` was
+installed by an older one, status reports it as outdated and tells you to
+re-run the installer - which then updates the managed block to the new
+version's content automatically (same idempotent replace logic used today).
 
 The underlying scripts in `scripts/` can still be run directly if you prefer:
 

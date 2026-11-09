@@ -16,19 +16,40 @@
 # content. This script does not attempt to work around that.
 #
 # Usage:
-#   ./install-win-terminal-session-restore.sh [--dry-run] [--revert]
+#   ./install-win-terminal-session-restore.sh [--dry-run] [--revert] [--status] [--version] [--help]
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+TOOL_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+
 DRY_RUN=0
 REVERT=0
+STATUS=0
 
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=1 ;;
         --revert) REVERT=1 ;;
+        --status) STATUS=1 ;;
+        --version)
+            echo "win-terminal-saving-sessions v${TOOL_VERSION}"
+            exit 0
+            ;;
         -h|--help)
-            grep '^#' "$0" | sed 's/^# \{0,1\}//'
+            cat <<EOF
+win-terminal-saving-sessions v${TOOL_VERSION}
+
+Usage: install-win-terminal-session-restore.sh [--dry-run] [--revert] [--status] [--version] [--help]
+
+  (no flags)  Apply the Windows Terminal + Git Bash changes.
+  --dry-run   Show what would change without writing anything.
+  --revert    Restore the most recent backups (undo install).
+  --status    Report current install state and version, write nothing.
+  --version   Print the tool version.
+  --help      Print this message.
+EOF
             exit 0
             ;;
         *)
@@ -113,7 +134,10 @@ set_persisted_window_layout() {
     ok "  Updated: $path"
 }
 
-BASHRC_BLOCK_BEGIN='# >>> win-terminal-saving-sessions >>>'
+# Matches both the current versioned marker and the original unversioned one,
+# so upgrades from any prior install are detected and replaced.
+BASHRC_BEGIN_PATTERN='# >>> win-terminal-saving-sessions( v[0-9][0-9.]*)? >>>'
+BASHRC_BLOCK_BEGIN="# >>> win-terminal-saving-sessions v${TOOL_VERSION} >>>"
 BASHRC_BLOCK_END='# <<< win-terminal-saving-sessions <<<'
 BASHRC_BLOCK_BODY='# Managed by win-terminal-saving-sessions. Safe to delete this block to revert.
 
@@ -150,10 +174,10 @@ set_bashrc_block() {
 ${BASHRC_BLOCK_BODY}
 ${BASHRC_BLOCK_END}"
 
-    if grep -qF "$BASHRC_BLOCK_BEGIN" "$path"; then
+    if grep -Eq "$BASHRC_BEGIN_PATTERN" "$path"; then
         local current_block
-        current_block=$(awk -v b="$BASHRC_BLOCK_BEGIN" -v e="$BASHRC_BLOCK_END" '
-            $0==b{p=1} p{print} $0==e{exit}
+        current_block=$(awk -v b="$BASHRC_BEGIN_PATTERN" -v e="$BASHRC_BLOCK_END" '
+            $0 ~ b{p=1} p{print} $0==e{exit}
         ' "$path")
         if [[ "$current_block" == "$new_block" ]]; then
             muted "  Already configured: $path"
@@ -164,8 +188,8 @@ ${BASHRC_BLOCK_END}"
             return 0
         fi
         backup_file "$path" >/dev/null
-        awk -v b="$BASHRC_BLOCK_BEGIN" -v e="$BASHRC_BLOCK_END" -v new="$new_block" '
-            $0==b{print new; skip=1; next}
+        awk -v b="$BASHRC_BEGIN_PATTERN" -v e="$BASHRC_BLOCK_END" -v new="$new_block" '
+            $0 ~ b{print new; skip=1; next}
             skip && $0==e{skip=0; next}
             skip{next}
             {print}
@@ -185,10 +209,64 @@ ${BASHRC_BLOCK_END}"
     ok "  Updated: $path"
 }
 
+# Prints "found|version|uptodate" (pipe-separated) without writing anything.
+get_bashrc_status() {
+    local path="$1"
+    if [[ ! -f "$path" ]] || ! grep -Eq "$BASHRC_BEGIN_PATTERN" "$path"; then
+        printf 'false||false\n'
+        return
+    fi
+    local begin_line version
+    begin_line=$(grep -E "$BASHRC_BEGIN_PATTERN" "$path" | head -n1)
+    version=$(grep -oE 'v[0-9][0-9.]*' <<< "$begin_line" | sed 's/^v//')
+    [[ -z "$version" ]] && version='pre-1.0.0 (unversioned)'
+
+    local current_block new_block
+    current_block=$(awk -v b="$BASHRC_BEGIN_PATTERN" -v e="$BASHRC_BLOCK_END" '
+        $0 ~ b{p=1} p{print} $0==e{exit}
+    ' "$path")
+    new_block="${BASHRC_BLOCK_BEGIN}
+${BASHRC_BLOCK_BODY}
+${BASHRC_BLOCK_END}"
+    local uptodate='false'
+    [[ "$current_block" == "$new_block" ]] && uptodate='true'
+    printf 'true|%s|%s\n' "$version" "$uptodate"
+}
+
+get_settings_status() {
+    local path="$1"
+    grep -Eq '"firstWindowPreference"[[:space:]]*:[[:space:]]*"persistedWindowLayout"' "$path"
+}
+
 # ---------------------------------------------------------------------------
 
 mapfile -t settings_paths < <(get_windows_terminal_settings_paths)
 bashrc_path="${HOME}/.bashrc"
+
+if [[ "$STATUS" -eq 1 ]]; then
+    section "win-terminal-saving-sessions status (tool v${TOOL_VERSION})"
+
+    if [[ ${#settings_paths[@]} -eq 0 ]]; then
+        warn '  settings.json: not found. Is Windows Terminal installed?'
+    fi
+    for p in "${settings_paths[@]}"; do
+        if get_settings_status "$p"; then
+            ok "  settings.json: applied ($p)"
+        else
+            warn "  settings.json: NOT applied ($p)"
+        fi
+    done
+
+    IFS='|' read -r found version uptodate <<< "$(get_bashrc_status "$bashrc_path")"
+    if [[ "$found" != "true" ]]; then
+        warn "  .bashrc: not installed ($bashrc_path)"
+    elif [[ "$version" == "$TOOL_VERSION" && "$uptodate" == "true" ]]; then
+        ok "  .bashrc: installed, v${version} (up to date)"
+    else
+        warn "  .bashrc: installed, v${version} (outdated - latest is v${TOOL_VERSION}, run install to update)"
+    fi
+    exit 0
+fi
 
 if [[ "$REVERT" -eq 1 ]]; then
     section 'Reverting Windows Terminal settings.json'

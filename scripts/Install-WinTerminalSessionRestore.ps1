@@ -27,14 +27,51 @@
 
 .PARAMETER DryRun
     Shows what would change without writing anything.
+
+.PARAMETER Status
+    Reports whether each change is currently applied, and which installed
+    version (if any) the .bashrc block is at, without writing anything.
+
+.PARAMETER Version
+    Prints the tool version and exits.
+
+.PARAMETER Help
+    Prints usage and exits.
 #>
 [CmdletBinding()]
 param(
     [switch]$Revert,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$Status,
+    [switch]$Version,
+    [switch]$Help
 )
 
 $ErrorActionPreference = 'Stop'
+
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$ToolVersion = (Get-Content -LiteralPath (Join-Path $RepoRoot 'VERSION') -Raw).Trim()
+
+if ($Help) {
+    Write-Host @"
+win-terminal-saving-sessions v$ToolVersion
+
+Usage: Install-WinTerminalSessionRestore.ps1 [-DryRun] [-Revert] [-Status] [-Version] [-Help]
+
+  (no flags)  Apply the Windows Terminal + Git Bash changes.
+  -DryRun     Show what would change without writing anything.
+  -Revert     Restore the most recent backups (undo install).
+  -Status     Report current install state and version, write nothing.
+  -Version    Print the tool version.
+  -Help       Print this message.
+"@
+    return
+}
+
+if ($Version) {
+    Write-Host "win-terminal-saving-sessions v$ToolVersion"
+    return
+}
 
 function Write-Section($text) {
     Write-Host ""
@@ -115,7 +152,10 @@ function Set-PersistedWindowLayout($path) {
     return $true
 }
 
-$BashrcBlockBegin = '# >>> win-terminal-saving-sessions >>>'
+# Matches both the current versioned marker and the original unversioned one,
+# so upgrades from any prior install are detected and replaced.
+$BashrcBeginPattern = '# >>> win-terminal-saving-sessions(?: v[0-9][0-9.]*)? >>>'
+$BashrcBlockBegin = "# >>> win-terminal-saving-sessions v$ToolVersion >>>"
 $BashrcBlockEnd = '# <<< win-terminal-saving-sessions <<<'
 $BashrcBlockBody = @'
 # Managed by win-terminal-saving-sessions. Safe to delete this block to revert.
@@ -149,11 +189,12 @@ function Set-BashrcBlock($path) {
     }
 
     $raw = [System.IO.File]::ReadAllText($path)
-    $blockPattern = [regex]::Escape($BashrcBlockBegin) + '.*?' + [regex]::Escape($BashrcBlockEnd)
+    $blockPattern = $BashrcBeginPattern + '.*?' + [regex]::Escape($BashrcBlockEnd)
     $newBlock = "$BashrcBlockBegin`n$BashrcBlockBody`n$BashrcBlockEnd"
 
-    if ($raw -match $blockPattern) {
-        if ($Matches[0] -eq $newBlock -or $Matches[0] -eq ($newBlock -replace "`n", "`r`n")) {
+    $existingMatch = [regex]::Match($raw, $blockPattern, 'Singleline')
+    if ($existingMatch.Success) {
+        if ($existingMatch.Value -eq $newBlock -or $existingMatch.Value -eq ($newBlock -replace "`n", "`r`n")) {
             Write-Host "  Already configured: $path" -ForegroundColor DarkGray
             return $false
         }
@@ -178,10 +219,65 @@ function Set-BashrcBlock($path) {
     return $true
 }
 
+function Get-BashrcStatus($path) {
+    if (-not (Test-Path -LiteralPath $path)) {
+        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false }
+    }
+    $raw = [System.IO.File]::ReadAllText($path)
+    $beginMatch = [regex]::Match($raw, $BashrcBeginPattern)
+    if (-not $beginMatch.Success) {
+        return [pscustomobject]@{ Found = $false; InstalledVersion = $null; UpToDate = $false }
+    }
+    $verMatch = [regex]::Match($beginMatch.Value, 'v([0-9][0-9.]*)')
+    $installedVersion = if ($verMatch.Success) { $verMatch.Groups[1].Value } else { 'pre-1.0.0 (unversioned)' }
+
+    $blockPattern = $BashrcBeginPattern + '.*?' + [regex]::Escape($BashrcBlockEnd)
+    $blockMatch = [regex]::Match($raw, $blockPattern, 'Singleline')
+    $newBlock = "$BashrcBlockBegin`n$BashrcBlockBody`n$BashrcBlockEnd"
+    $upToDate = $blockMatch.Success -and ($blockMatch.Value -eq $newBlock -or $blockMatch.Value -eq ($newBlock -replace "`n", "`r`n"))
+
+    return [pscustomobject]@{ Found = $true; InstalledVersion = $installedVersion; UpToDate = $upToDate }
+}
+
+function Get-SettingsStatus($path) {
+    $raw = [System.IO.File]::ReadAllText($path)
+    $pattern = '"firstWindowPreference"\s*:\s*"[^"]*"'
+    $desired = '"firstWindowPreference": "persistedWindowLayout"'
+    return ($raw -match $pattern) -and ($Matches[0] -eq $desired)
+}
+
 # ---------------------------------------------------------------------------
 
 $settingsPaths = @(Get-WindowsTerminalSettingsPaths)
 $bashrcPath = Join-Path $env:USERPROFILE '.bashrc'
+
+if ($Status) {
+    Write-Section "win-terminal-saving-sessions status (tool v$ToolVersion)"
+
+    if ($settingsPaths.Count -eq 0) {
+        Write-Host '  settings.json: not found. Is Windows Terminal installed?' -ForegroundColor Yellow
+    }
+    foreach ($p in $settingsPaths) {
+        if (Get-SettingsStatus $p) {
+            Write-Host "  settings.json: applied ($p)" -ForegroundColor Green
+        }
+        else {
+            Write-Host "  settings.json: NOT applied ($p)" -ForegroundColor Yellow
+        }
+    }
+
+    $bashrcStatus = Get-BashrcStatus $bashrcPath
+    if (-not $bashrcStatus.Found) {
+        Write-Host "  .bashrc: not installed ($bashrcPath)" -ForegroundColor Yellow
+    }
+    elseif ($bashrcStatus.InstalledVersion -eq $ToolVersion -and $bashrcStatus.UpToDate) {
+        Write-Host "  .bashrc: installed, v$($bashrcStatus.InstalledVersion) (up to date)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  .bashrc: installed, v$($bashrcStatus.InstalledVersion) (outdated - latest is v$ToolVersion, run install to update)" -ForegroundColor Yellow
+    }
+    return
+}
 
 if ($Revert) {
     Write-Section 'Reverting Windows Terminal settings.json'
