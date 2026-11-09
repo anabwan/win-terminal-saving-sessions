@@ -6,6 +6,7 @@ for **Windows Terminal 1.24+** with **Git Bash** tabs.
 ## Repo layout
 
 ```
+setup.ps1                                  # entry point: install or uninstall
 scripts/
   Install-WinTerminalSessionRestore.ps1    # main installer (-DryRun / -Revert)
   Rollback-WinTerminalSessionRestore.ps1   # thin wrapper for Install...ps1 -Revert
@@ -34,7 +35,7 @@ descoped per discussion.
 Run:
 
 ```powershell
-.\scripts\Install-WinTerminalSessionRestore.ps1
+.\setup.ps1
 ```
 
 It touches two files, backing each up first (`<file>.bak-<timestamp>`):
@@ -58,8 +59,16 @@ re-apply an already-correct setting.
 ## Options
 
 ```powershell
-.\scripts\Install-WinTerminalSessionRestore.ps1 -DryRun   # show what would change, write nothing
-.\scripts\Install-WinTerminalSessionRestore.ps1 -Revert   # restore the most recent backups it made
+.\setup.ps1                 # install (equivalent to -Action Install)
+.\setup.ps1 -DryRun         # show what would change, write nothing
+.\setup.ps1 -Action Uninstall   # restore the most recent backups it made
+```
+
+The underlying scripts in `scripts/` can still be run directly if you prefer:
+
+```powershell
+.\scripts\Install-WinTerminalSessionRestore.ps1 -DryRun
+.\scripts\Install-WinTerminalSessionRestore.ps1 -Revert
 .\scripts\Rollback-WinTerminalSessionRestore.ps1          # same as -Revert, as its own script
 ```
 
