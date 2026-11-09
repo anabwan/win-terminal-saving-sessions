@@ -178,6 +178,10 @@ trap 'history -a' DEBUG
 # pane's CWD is restored when using "firstWindowPreference": "persistedWindowLayout".
 PROMPT_COMMAND=${PROMPT_COMMAND:+"$PROMPT_COMMAND; "}'printf "\e]9;9;%s\e\\" "`cygpath -w "$PWD" -C ANSI`"'
 '@
+# Normalize to LF: the here-string above picks up whatever line endings this
+# .ps1 file was checked out with (CRLF from a normal git clone, LF from a
+# GitHub zip/Scoop install), which must not affect the block we write/compare.
+$BashrcBlockBody = $BashrcBlockBody -replace "`r`n", "`n"
 
 function Set-BashrcBlock($path) {
     if (-not (Test-Path -LiteralPath $path)) {
@@ -194,7 +198,7 @@ function Set-BashrcBlock($path) {
 
     $existingMatch = [regex]::Match($raw, $blockPattern, 'Singleline')
     if ($existingMatch.Success) {
-        if ($existingMatch.Value -eq $newBlock -or $existingMatch.Value -eq ($newBlock -replace "`n", "`r`n")) {
+        if (($existingMatch.Value -replace "`r`n", "`n") -eq $newBlock) {
             Write-Host "  Already configured: $path" -ForegroundColor DarkGray
             return $false
         }
@@ -234,7 +238,7 @@ function Get-BashrcStatus($path) {
     $blockPattern = $BashrcBeginPattern + '.*?' + [regex]::Escape($BashrcBlockEnd)
     $blockMatch = [regex]::Match($raw, $blockPattern, 'Singleline')
     $newBlock = "$BashrcBlockBegin`n$BashrcBlockBody`n$BashrcBlockEnd"
-    $upToDate = $blockMatch.Success -and ($blockMatch.Value -eq $newBlock -or $blockMatch.Value -eq ($newBlock -replace "`n", "`r`n"))
+    $upToDate = $blockMatch.Success -and (($blockMatch.Value -replace "`r`n", "`n") -eq $newBlock)
 
     return [pscustomobject]@{ Found = $true; InstalledVersion = $installedVersion; UpToDate = $upToDate }
 }
