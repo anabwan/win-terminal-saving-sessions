@@ -1,11 +1,11 @@
 {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Windows Terminal + Git Bash session restore: persisted window layout, pane CWD tracking, and crash-safe bash history.",
     "homepage": "https://github.com/anabwan/win-terminal-saving-sessions",
     "license": "MIT",
-    "url": "https://github.com/anabwan/win-terminal-saving-sessions/archive/refs/tags/v1.0.1.zip",
-    "hash": "4b3f2104585971786ce68315b205b9cda417d9b1a9cb05ce633ab90bf2282369",
-    "extract_dir": "win-terminal-saving-sessions-1.0.1",
+    "url": "https://github.com/anabwan/win-terminal-saving-sessions/archive/refs/tags/v1.0.2.zip",
+    "hash": "75193a64dc597eff941c596b5b67300853331033ecaeb8bfc78790a62d40d369",
+    "extract_dir": "win-terminal-saving-sessions-1.0.2",
     "bin": [
         [
             "setup.ps1",
