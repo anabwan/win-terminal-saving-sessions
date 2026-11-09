@@ -179,3 +179,29 @@ pre-install state.
 - To test history: run a command, then kill the Windows Terminal process
   directly (simulating an unclean shutdown/reboot) and reopen - the command
   should still be in `history`/`~/.bash_history`.
+
+## Releasing a new version
+
+1. Bump the version in `VERSION` (single line, e.g. `1.0.2`).
+2. Commit the change (plus whatever fix/feature triggered it).
+3. Tag and push:
+   ```powershell
+   git tag -a v1.0.2 -m "v1.0.2: <summary>"
+   git push origin main
+   git push origin v1.0.2
+   ```
+4. Update the Scoop manifest ([bucket/win-terminal-saving-sessions.json](bucket/win-terminal-saving-sessions.json))
+   to point at the new tag and hash:
+   ```powershell
+   Invoke-WebRequest -Uri "https://github.com/anabwan/win-terminal-saving-sessions/archive/refs/tags/v1.0.2.zip" -OutFile wtss.zip
+   (Get-FileHash wtss.zip -Algorithm SHA256).Hash
+   ```
+   Put that hash, the new `version`, `url` and `extract_dir` into the manifest,
+   then commit and push.
+5. Optionally draft a GitHub Release from the new tag with release notes.
+6. Scoop users pick it up via `scoop update; scoop update win-terminal-saving-sessions`.
+
+`--status`/`-Action Status` on an older install will report it as outdated
+once `VERSION` is ahead of what's in `.bashrc`, and tells the user to re-run
+the installer.
+
