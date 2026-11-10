@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="12" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-11-10" time="09:56:42">
+  <environment clr-version="10.0.14" cwd="C:\github\win-terminal-saving-sessions" user-domain="GER" machine-name="SOC-8CG5172ZB4" nunit-version="2.5.8.0" user="anabwan" os-version="10.0.26200" platform="Microsoft Windows 11 Enterprise|C:\WINDOWS|\Device\Harddisk0\Partition3" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Success" success="True" time="0.2825" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="C:\github\win-terminal-saving-sessions\tests\Install-WinTerminalSessionRestore.Tests.ps1" executed="True" result="Success" success="True" time="0.2825" asserts="0" description="C:\github\win-terminal-saving-sessions\tests\Install-WinTerminalSessionRestore.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Get-BashrcStatus" executed="True" result="Success" success="True" time="0.0146" asserts="0" description="Get-BashrcStatus">
+            <results>
+              <test-case description="reports Found = $false for a missing file" name="Get-BashrcStatus.reports Found = $false for a missing file" time="0.0049" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reports Found = $false for a file with no managed block" name="Get-BashrcStatus.reports Found = $false for a file with no managed block" time="0.0051" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Set-BashrcBlock idempotency" executed="True" result="Success" success="True" time="0.066" asserts="0" description="Set-BashrcBlock idempotency">
+            <results>
+              <test-case description="creates the managed block on first run and reports up to date afterwards" name="Set-BashrcBlock idempotency.creates the managed block on first run and reports up to date afterwards" time="0.008" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="does not duplicate the block on a second run (regression: v1.0.0 -match Singleline bug)" name="Set-BashrcBlock idempotency.does not duplicate the block on a second run (regression: v1.0.0 -match Singleline bug)" time="0.0122" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="replaces an existing older/unversioned block instead of appending a duplicate" name="Set-BashrcBlock idempotency.replaces an existing older/unversioned block instead of appending a duplicate" time="0.0119" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="preserves unrelated content in the file around the managed block" name="Set-BashrcBlock idempotency.preserves unrelated content in the file around the managed block" time="0.013" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Get-BashrcStatus corruption detection" executed="True" result="Success" success="True" time="0.0925" asserts="0" description="Get-BashrcStatus corruption detection">
+            <results>
+              <test-case description="reports BlockCount &gt; 1 when the managed block is duplicated (regression safeguard)" name="Get-BashrcStatus corruption detection.reports BlockCount &gt; 1 when the managed block is duplicated (regression safeguard)" time="0.0188" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Get-BashrcStatus line-ending tolerance (regression: CRLF/LF checkout mismatch)" executed="True" result="Success" success="True" time="0.1279" asserts="0" description="Get-BashrcStatus line-ending tolerance (regression: CRLF/LF checkout mismatch)">
+            <results>
+              <test-case description="reports up to date for a block written with LF-only line endings" name="Get-BashrcStatus line-ending tolerance (regression: CRLF/LF checkout mismatch).reports up to date for a block written with LF-only line endings" time="0.013" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reports up to date for a block written with CRLF-only line endings" name="Get-BashrcStatus line-ending tolerance (regression: CRLF/LF checkout mismatch).reports up to date for a block written with CRLF-only line endings" time="0.0146" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Set-PersistedWindowLayout / Get-SettingsStatus" executed="True" result="Success" success="True" time="0.164" asserts="0" description="Set-PersistedWindowLayout / Get-SettingsStatus">
+            <results>
+              <test-case description="adds the setting to a fresh settings.json and marks it applied" name="Set-PersistedWindowLayout / Get-SettingsStatus.adds the setting to a fresh settings.json and marks it applied" time="0.0083" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="is idempotent on a second run" name="Set-PersistedWindowLayout / Get-SettingsStatus.is idempotent on a second run" time="0.0115" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="replaces a pre-existing different firstWindowPreference value" name="Set-PersistedWindowLayout / Get-SettingsStatus.replaces a pre-existing different firstWindowPreference value" time="0.0099" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

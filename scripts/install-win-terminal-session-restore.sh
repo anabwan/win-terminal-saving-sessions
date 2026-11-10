@@ -240,7 +240,9 @@ get_settings_status() {
 }
 
 # ---------------------------------------------------------------------------
-
+# Source this script (`source install-win-terminal-session-restore.sh`) to load
+# the functions above for testing without running main() below.
+main() {
 mapfile -t settings_paths < <(get_windows_terminal_settings_paths)
 bashrc_path="${HOME}/.bashrc"
 
@@ -305,3 +307,8 @@ printf '\033[36mRestart Windows Terminal fully (not just close the window - use 
 warn "IMPORTANT: bash only reads .bashrc when a shell STARTS. Any Git Bash tab that was already open before running this script won't track its working directory until you run \`source ~/.bashrc\` in it (or close and reopen that tab). New tabs opened from now on pick it up automatically."
 muted "Run with --revert to restore the previous settings.json/.bashrc from the backups this script made."
 muted "Note: Windows Terminal cannot restore pane scrollback/output content - only tabs, panes, profiles and (now) working directories."
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main
+fi

@@ -1,5 +1,10 @@
 # win-terminal-saving-sessions
 
+[![Latest release](https://img.shields.io/github/v/release/anabwan/win-terminal-saving-sessions)](https://github.com/anabwan/win-terminal-saving-sessions/releases)
+[![CI](https://github.com/anabwan/win-terminal-saving-sessions/actions/workflows/ci.yml/badge.svg)](https://github.com/anabwan/win-terminal-saving-sessions/actions/workflows/ci.yml)
+[![Scoop bucket](https://img.shields.io/badge/scoop-bucket-blue)](https://github.com/anabwan/win-terminal-saving-sessions#via-scoop-recommended-for-powershell-users)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Fixes the "I have to rebuild my whole terminal setup after every reboot" problem
 for **Windows Terminal 1.24+** with **Git Bash** tabs.
 
@@ -19,6 +24,12 @@ scripts/
   Rollback-WinTerminalSessionRestore.ps1      # PowerShell: thin wrapper for Install...ps1 -Revert
   install-win-terminal-session-restore.sh     # Bash installer (--dry-run / --revert / --status / --version / --help)
   rollback-win-terminal-session-restore.sh    # Bash: thin wrapper for install...sh --revert
+tests/
+  Install-WinTerminalSessionRestore.Tests.ps1 # Pester regression tests (PowerShell)
+  run-bash-tests.sh                           # Dependency-free regression tests (bash)
+.github/workflows/ci.yml                      # Runs the tests above on every push/PR
+LICENSE                                       # MIT
+CHANGELOG.md
 README.md
 ```
 

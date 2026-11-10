@@ -252,6 +252,9 @@ function Get-SettingsStatus($path) {
 }
 
 # ---------------------------------------------------------------------------
+# Dot-source this script (`. .\Install-WinTerminalSessionRestore.ps1`) to load
+# the functions above for testing without running the dispatch below.
+if ($MyInvocation.InvocationName -ne '.') {
 
 $settingsPaths = @(Get-WindowsTerminalSettingsPaths)
 $bashrcPath = Join-Path $env:USERPROFILE '.bashrc'
@@ -319,3 +322,6 @@ Write-Host 'Restart Windows Terminal fully (not just close the window - use the 
 Write-Host "IMPORTANT: bash only reads .bashrc when a shell STARTS. Any Git Bash tab that was already open before running this script won't track its working directory until you run ``source ~/.bashrc`` in it (or close and reopen that tab). New tabs opened from now on pick it up automatically." -ForegroundColor Yellow
 Write-Host "Run with -Revert to restore the previous settings.json/.bashrc from the backups this script made." -ForegroundColor DarkGray
 Write-Host "Note: Windows Terminal cannot restore pane scrollback/output content - only tabs, panes, profiles and (now) working directories." -ForegroundColor DarkGray
+
+}
+

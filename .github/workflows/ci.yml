@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Scoop manifest JSON
+        shell: pwsh
+        run: |
+          Get-Content bucket/win-terminal-saving-sessions.json -Raw | ConvertFrom-Json | Out-Null
+
+      - name: Bash syntax check
+        shell: bash
+        run: |
+          bash -n scripts/install-win-terminal-session-restore.sh
+          bash -n scripts/rollback-win-terminal-session-restore.sh
+          bash -n setup.sh
+
+      - name: Bash --help / --version / --dry-run smoke test
+        shell: bash
+        run: |
+          set -e
+          ./setup.sh --help
+          ./setup.sh --version
+          ./setup.sh --dry-run
+
+      - name: Bash regression tests
+        shell: bash
+        run: |
+          bash tests/run-bash-tests.sh
+
+      - name: PowerShell -Help / -Version / -DryRun smoke test
+        shell: pwsh
+        run: |
+          .\setup.ps1 -Help
+          .\setup.ps1 -Version
+          .\setup.ps1 -DryRun
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -MinimumVersion 5.0.0 -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: PowerShell regression tests (Pester)
+        shell: pwsh
+        run: |
+          Invoke-Pester -Path .\tests\Install-WinTerminalSessionRestore.Tests.ps1 -CI
